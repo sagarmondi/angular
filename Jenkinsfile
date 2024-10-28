@@ -15,7 +15,7 @@ pipeline {
         
         // Optionally save the output in a JSON file
         // Uncomment the following line if you want to capture the output in a file
-        sh 'semgrep --output-path results.json'
+        sh '/var/lib/jenkins/.local/bin/semgrep --output-path results.json'
       }
     }
   }
