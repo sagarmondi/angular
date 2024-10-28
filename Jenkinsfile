@@ -1,33 +1,24 @@
 pipeline {
-    agent any
-    environment {
-        SEMGREP_TOKEN = credentials('SEMGREP_APP_TOKEN')  // Replace with your Jenkins secret ID for the Semgrep API token
-        SEMGREP_API_URL = 'https://semgrep.dev'  // Base URL for Semgrep API
+  agent any
+  environment {
+    // Required for Semgrep AppSec Platform-connected scan:
+    SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
+  }
+  stages {
+    stage('Checkout Code') {
+      steps {
+        // Explicitly checkout code from a specific repository
+        git url: 'https://github.com/sagarmondi/angular.git', branch: 'main'
+      }
     }
-    stages {
-        stage('List Semgrep Projects') {
-            steps {
-                script {
-                    def response = sh (
-                        script: """
-                            curl -s -H "Authorization: Bearer $SEMGREP_TOKEN" \
-                            "$SEMGREP_API_URL/orgs/sagarmondi917_personal_org/projects"
-                        """,
-                        returnStdout: true
-                    ).trim()
-                    
-                    echo "Semgrep Projects:"
-                    echo "${response}"
-                }
-            }
-        }
+    stage('Semgrep-Scan') {
+      steps {
+        // Install Semgrep tool
+        sh 'pip3 install semgrep'
+
+        // Run the Semgrep scan on the checked-out code
+        sh 'semgrep ci'
+      }
     }
-    post {
-        always {
-            echo 'Pipeline completed.'
-        }
-        failure {
-            echo 'Failed to retrieve projects from Semgrep platform. Check token or network access.'
-        }
-    }
+  }
 }
