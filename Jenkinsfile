@@ -11,7 +11,7 @@ pipeline {
         sh 'pip3 install semgrep'
 
         // Run the Semgrep scan with default rules
-        sh 'semgrep ci'
+        sh '/var/lib/jenkins/.local/bin/semgrep ci'
         
         // Optionally save the output in a JSON file
         // Uncomment the following line if you want to capture the output in a file
