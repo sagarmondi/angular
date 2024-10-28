@@ -8,7 +8,7 @@ pipeline {
     stage('Semgrep-Scan') {
       steps {
         // Install Semgrep tool
-        sh 'pip3 install semgrep'
+        sh 'sudo pip3 install semgrep'
 
         // Run the Semgrep scan with default rules
         sh 'semgrep ci'
