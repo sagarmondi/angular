@@ -15,11 +15,8 @@ pipeline {
     stage('Run Semgrep Scan') {
       steps {
         script {
-          // Run the Semgrep scan without --config parameter since we are logged into Semgrep App
+          // Run the Semgrep scan with CI mode, which includes both code and supply chain scans
           sh '/var/lib/jenkins/.local/bin/semgrep ci --json --no-suppress-errors -o results.json'
-          
-          // Run supply chain analysis explicitly (if not included by default) and append to results.json
-          sh '/var/lib/jenkins/.local/bin/semgrep supply-chain --json >> results.json'
         }
       }
     }
