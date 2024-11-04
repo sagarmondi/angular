@@ -32,7 +32,14 @@
             "scripts": [],
             "browser": "src/main.ts"
           },
-         
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
                 {
                   "type": "anyComponentStyle",
                   "maximumWarning": "2kb",
