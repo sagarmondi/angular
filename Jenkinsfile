@@ -4,7 +4,7 @@ pipeline {
     SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN') // Token for Semgrep
   }
   stages {
-    
+
     stage('Build') {
       steps {
         echo 'Building application...'
@@ -15,7 +15,11 @@ pipeline {
     stage('SCA - Software Composition Analysis') {
       steps {
         echo 'Running SCA scan...'
-        // Run Semgrep or any designated SCA tool
+        
+        // Capture rules with a dry run before scanning
+        sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --dry-run > sca_rules_list.txt'
+        
+        // Run Semgrep for actual SCA scan
         sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --json -o sca_results.json'
       }
     }
@@ -23,7 +27,11 @@ pipeline {
     stage('SAST - Static Application Security Testing') {
       steps {
         echo 'Running SAST scan...'
-        // Run Semgrep or another SAST tool
+
+        // Capture rules with a dry run before scanning
+        sh '/var/lib/jenkins/.local/bin/semgrep ci --dry-run > sast_rules_list.txt'
+        
+        // Run Semgrep for actual SAST scan
         sh '/var/lib/jenkins/.local/bin/semgrep ci --json --no-suppress-errors -o sast_results.json'
       }
     }
@@ -48,7 +56,6 @@ pipeline {
       steps {
         echo 'Deploying application...'
         // Example deployment command
-        
       }
     }
 
@@ -62,8 +69,8 @@ pipeline {
 
   post {
     always {
-      // Archive JSON results for each stage
-      archiveArtifacts artifacts: '*.json', allowEmptyArchive: true
+      // Archive JSON results and the rule lists
+      archiveArtifacts artifacts: '*.json, *_rules_list.txt', allowEmptyArchive: true
     }
   }
 }
