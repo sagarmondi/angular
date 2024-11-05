@@ -1,50 +1,69 @@
 pipeline {
   agent any
   environment {
-    // Required for Semgrep AppSec Platform-connected scan
-    SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
+    SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN') // Token for Semgrep
   }
   stages {
-    stage('Install Semgrep') {
-      steps {
-        // Install Semgrep tool
-        sh 'pip3 install semgrep'
-      }
-    }
     
-    stage('Retrieve Rules') {
+    stage('Build') {
       steps {
-        script {
-          // Retrieve rules from Semgrep registry (this command lists the rules and saves them in rules.json)
-          sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --json > rules.json'
-        }
+        echo 'Building application...'
+        sh 'npm install && npm run build'  // Example for a Node.js application
       }
     }
 
-    stage('Run Semgrep Scan') {
+    stage('SCA - Software Composition Analysis') {
       steps {
-        script {
-          // Run the Semgrep scan in CI mode, which includes both code and supply chain scans
-          sh '/var/lib/jenkins/.local/bin/semgrep ci --json --no-suppress-errors -o results.json'
-        }
+        echo 'Running SCA scan...'
+        // Run Semgrep or any designated SCA tool
+        sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --json -o sca_results.json'
       }
     }
 
-    stage('Combine Results and Rules') {
+    stage('SAST - Static Application Security Testing') {
       steps {
-        script {
-          // Use jq or a similar tool to merge rules.json and results.json
-          // This command assumes jq is installed on your Jenkins instance
-          sh 'jq -s \'{"rules": .[0], "scan_results": .[1]}\' rules.json results.json > combined_results.json'
-        }
+        echo 'Running SAST scan...'
+        // Run Semgrep or another SAST tool
+        sh '/var/lib/jenkins/.local/bin/semgrep ci --json --no-suppress-errors -o sast_results.json'
       }
     }
 
-    stage('Archive Results') {
+    stage('DAST - Dynamic Application Security Testing') {
       steps {
-        // Archive the combined_results.json file as an artifact in Jenkins
-        archiveArtifacts artifacts: 'combined_results.json', allowEmptyArchive: true
+        echo 'Running DAST scan...'
+        // Placeholder for DAST tool (e.g., OWASP ZAP)
+        // Example: sh 'zap-cli quick-scan http://your-app-url'
       }
+    }
+
+    stage('IAST - Interactive Application Security Testing') {
+      steps {
+        echo 'Running IAST scan...'
+        // Placeholder for IAST tool
+        // Example: sh 'some_iast_tool --scan'
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        echo 'Deploying application...'
+        // Example deployment command
+        sh 'npm run deploy'
+      }
+    }
+
+    stage('Monitor') {
+      steps {
+        echo 'Setting up monitoring...'
+        // Placeholder for monitoring setup
+      }
+    }
+  }
+
+  post {
+    always {
+      // Archive JSON results for each stage
+      archiveArtifacts artifacts: '*.json', allowEmptyArchive: true
     }
   }
 }
