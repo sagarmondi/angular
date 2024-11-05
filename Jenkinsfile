@@ -48,7 +48,7 @@ pipeline {
       steps {
         echo 'Deploying application...'
         // Example deployment command
-        sh 'npm run deploy'
+        
       }
     }
 
