@@ -17,7 +17,7 @@ pipeline {
         echo 'Running SCA scan...'
         
         // Capture rules with a dry run before scanning
-        sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --dry-run > sca_rules_list.txt'
+        sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --dryrun > sca_rules_list.txt'
         
         // Run Semgrep for actual SCA scan
         sh '/var/lib/jenkins/.local/bin/semgrep --config=auto --json -o sca_results.json'
@@ -29,7 +29,7 @@ pipeline {
         echo 'Running SAST scan...'
 
         // Capture rules with a dry run before scanning
-        sh '/var/lib/jenkins/.local/bin/semgrep ci --dry-run > sast_rules_list.txt'
+        sh '/var/lib/jenkins/.local/bin/semgrep ci --dryrun > sast_rules_list.txt'
         
         // Run Semgrep for actual SAST scan
         sh '/var/lib/jenkins/.local/bin/semgrep ci --json --no-suppress-errors -o sast_results.json'
