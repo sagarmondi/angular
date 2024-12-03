@@ -17,13 +17,7 @@ pipeline {
     }
     
     stages {
-        stage('Clone Repository') {
-            steps {
-                git 'https://github.com/yourusername/your-repo.git'  // Replace with your repo URL
-            }
-        }
-        
-        stage('Install Dependencies') {
+       stage('Install Dependencies') {
             steps {
                 script {
                     sh 'npm install -g yarn pm2'
