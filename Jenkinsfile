@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        SEMGREP_API_TOKEN = credentials('semgrep-api-token') // Store your Semgrep API token securely
+        SEMGREP_API_TOKEN = credentials('SEMGREP_APP_TOKEN') // Store your Semgrep API token securely
         DEPLOYMENT_SLUG = 'sagarmondi917_personal_org' // Replace with your deployment slug
         SEMGREP_POLICIES = 'rule-board-block,rule-board-pr-comments' // Comma-separated policies
         SEMGREP_RULES = 'typescript.react.security.audit.react-no-refs.react-no-refs,html.security.audit.missing-integrity.missing-integrity' // Comma-separated rules
