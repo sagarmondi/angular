@@ -2,9 +2,9 @@ pipeline {
     agent any
     environment {
         SEMGREP_API_TOKEN = credentials('semgrep-api-token') // Store your Semgrep API token securely
-        DEPLOYMENT_SLUG = 'your-deployment-slug' // Replace with your deployment slug
+        DEPLOYMENT_SLUG = 'sagarmondi917_personal_org' // Replace with your deployment slug
         SEMGREP_POLICIES = 'rule-board-block,rule-board-pr-comments' // Comma-separated policies
-        SEMGREP_RULES = 'typescript.react.security.audit.react-no-refs.react-no-refs,ajinabraham.njsscan.hardcoded_secrets.node_username' // Comma-separated rules
+        SEMGREP_RULES = 'typescript.react.security.audit.react-no-refs.react-no-refs,html.security.audit.missing-integrity.missing-integrity' // Comma-separated rules
     }
     stages {
         stage('Semgrep Scan') {
