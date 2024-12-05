@@ -1,137 +1,35 @@
 pipeline {
     agent any
-    
     environment {
-        // Deployment details
-        PRODUCTION_IP_ADDRESS = '52.43.163.218'
-        APP_PORT = '3001'  // Change this for each application
-        APP_NAME = 'angular'  // Unique name for each application
-        
-        // Semgrep and other tool configurations
-        SEMGREP_APP_TOKEN = credentials('SEMGREP_APP_TOKEN')
-        NUCLEI_TEMPLATES_PATH = '/home/ec2-user/nuclei-templates/'
+        SEMGREP_API_TOKEN = credentials('semgrep-api-token') // Store your Semgrep API token securely
+        DEPLOYMENT_SLUG = 'your-deployment-slug' // Replace with your deployment slug
+        SEMGREP_POLICIES = 'rule-board-block,rule-board-pr-comments' // Comma-separated policies
+        SEMGREP_RULES = 'typescript.react.security.audit.react-no-refs.react-no-refs,ajinabraham.njsscan.hardcoded_secrets.node_username' // Comma-separated rules
     }
-    
-    tools {
-        nodejs "nodejs"
-    }
-    
     stages {
-       stage('Install Dependencies') {
+        stage('Semgrep Scan') {
             steps {
                 script {
-                    sh 'npm install -g yarn pm2'
-                    sh 'yarn install'
+                    // Convert the environment variables into arrays for inclusion in the API call
+                    def policies = SEMGREP_POLICIES.split(',').collect { it.trim() }
+                    def rules = SEMGREP_RULES.split(',').collect { it.trim() }
+                    
+                    // Formulate the API request
+                    def apiUrl = "https://semgrep.dev/api/v1/deployments/${DEPLOYMENT_SLUG}/findings"
+                    def policyParams = policies.collect { "policies=${it}" }.join('&')
+                    def ruleParams = rules.collect { "rules=${it}" }.join('&')
+                    
+                    // Combine all parameters into the query string
+                    def queryParams = "${policyParams}&${ruleParams}"
+
+                    // Execute the API call
+                    sh """
+                    curl -X GET "${apiUrl}?${queryParams}" \
+                        -H "Authorization: Bearer ${SEMGREP_API_TOKEN}" \
+                        -H "Content-Type: application/json"
+                    """
                 }
             }
-        }
-        
-        stage('Build') {
-            steps {
-                sh 'yarn build || true'
-            }
-        }
-        
-        stage('SAST - Semgrep Scan') {
-            steps {
-                script {
-                    sh '''
-                        pip3 install semgrep
-                        semgrep ci --json -o semgrep-results.json || true
-                        
-                        # Extract and list used rules
-                        jq -r '.results[].extra.rule_id // .results[].check_id' semgrep-results.json | 
-                        sort | uniq > semgrep-used-rules.txt
-                        
-                        echo "Semgrep Rules Used:"
-                        cat semgrep-used-rules.txt
-                    '''
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'semgrep-results.json,semgrep-used-rules.txt', allowEmptyArchive: true
-                }
-            }
-        }
-        
-        stage('Deploy to Production') {
-            environment {
-                DEPLOY_SSH_KEY = credentials('aws_ssh_key')
-            }
-            steps {
-                script {
-                    sh '''
-                        chmod 600 $DEPLOY_SSH_KEY
-                        ssh -o StrictHostKeyChecking=no -i $DEPLOY_SSH_KEY ec2-user@$PRODUCTION_IP_ADDRESS '
-                            # Setup Node.js environment
-                            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-                            source ~/.bashrc
-                            nvm install --lts
-                            
-                            # Prepare application directory
-                            mkdir -p ~/apps/'"$APP_NAME"'
-                            cd ~/apps/'"$APP_NAME"'
-                            
-                            # Clone or update repository
-                            if [ ! -d ".git" ]; then
-                                git clone https://github.com/yourusername/your-repo.git .
-                            else
-                                git pull
-                            fi
-                            
-                            # Install dependencies and start app
-                            yarn install
-                            
-                            # Stop existing PM2 process if exists
-                            pm2 delete '"$APP_NAME"' || true
-                            
-                            # Start new application instance
-                            PORT='"$APP_PORT"' pm2 start --name '"$APP_NAME"' npm -- start
-                            
-                            # Ensure PM2 saves and starts on boot
-                            pm2 save
-                            pm2 startup
-                        '
-                    '''
-                }
-            }
-        }
-        
-        stage('DAST - Nuclei Scan') {
-            steps {
-                script {
-                    sh '''
-                        # Install Nuclei if not exists
-                        which nuclei || {
-                            wget https://github.com/projectdiscovery/nuclei/releases/download/v3.1.3/nuclei_3.1.3_linux_amd64.zip
-                            unzip nuclei_3.1.3_linux_amd64.zip
-                            sudo mv nuclei /usr/local/bin/
-                        }
-                        
-                        # Perform Nuclei scan
-                        nuclei -u http://$PRODUCTION_IP_ADDRESS:$APP_PORT \
-                               -t $NUCLEI_TEMPLATES_PATH \
-                               -o nuclei-results.txt
-                    '''
-                }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'nuclei-results.txt', allowEmptyArchive: true
-                }
-            }
-        }
-    }
-    
-    post {
-        always {
-            echo "Pipeline execution completed"
-            cleanWs()
-        }
-        
-        failure {
-            echo "Deployment failed. Sending notifications..."
         }
     }
 }
